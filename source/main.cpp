@@ -21,7 +21,7 @@ double euclideanDistanceSquared(std::vector<double>& a, std::vector<double>& b)
 		double sum = 0;
 		for (int i = 0; i < a.size(); ++i )
 		{
-			sum += a[i] * b[i];
+			sum += (a[i] - b[i])*(a[i] - b[i]);
 		}
 		return sum;
 	}
