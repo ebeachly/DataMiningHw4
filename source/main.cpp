@@ -8,6 +8,19 @@
 #include "file_parsing.h"
 #include "getCPUTime.h"
 
+void printVector(std::vector<double> vec)
+{
+	for (int a = 0; a < vec.size(); ++a)
+	{
+		printf("%f", vec[a]);
+		if (a < vec.size() - 1)
+		{
+			printf(", ");
+		}
+	}
+	printf("\n");
+}
+
 /**
  * returns the squared euclidean distance between two vectors of the same dimension
  */
@@ -57,7 +70,7 @@ public:
 			//Divide the sum by the number of instances
 			for (int a = 0; a < center.size(); ++a)
 			{
-				center[a] = center[a] / data.size();
+				center[a] = center[a] / instances.size();
 			}
 		}
 		if (oldCenter.size() == 0)
@@ -116,21 +129,22 @@ std::vector< Cluster > kMeans(std::vector<std::vector<double> >& data, int k, do
 		//For each point
 		for (int p = 0; p < data.size(); ++p)
 		{
+			//printVector(data[p]);
 			//Figure out which mean it's closer to
 			double minDistanceSquared = euclideanDistanceSquared(data[p], clusters[0].center);
-			printf("Distance to Cluster 0: %f, new min\n", minDistanceSquared);
+			//printf("Distance to Cluster 0: %f, new min\n", minDistanceSquared);
 			int closestMean = 0;
 			for (int m = 1; m < k; ++m)
 			{
 				double distance = euclideanDistanceSquared(data[p], clusters[m].center);
-				printf("Distance to Cluster %d: %f", m, distance);
+				//printf("Distance to Cluster %d: %f", m, distance);
 				if (distance < minDistanceSquared)
 				{
-					printf(", new min\n");
+					//printf(", new min\n");
 					minDistanceSquared = distance;
 					closestMean = m;
 				} else {
-					printf("\n");
+					//printf("\n");
 				}
 			}
 			//Assign the point to the cluster with the closest mean
