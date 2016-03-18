@@ -118,14 +118,19 @@ std::vector< Cluster > kMeans(std::vector<std::vector<double> >& data, int k, do
 		{
 			//Figure out which mean it's closer to
 			double minDistanceSquared = euclideanDistanceSquared(data[p], clusters[0].center);
+			printf("Distance to Cluster 0: %f, new min\n", minDistanceSquared);
 			int closestMean = 0;
 			for (int m = 1; m < k; ++m)
 			{
 				double distance = euclideanDistanceSquared(data[p], clusters[m].center);
+				printf("Distance to Cluster %d: %f", m, distance);
 				if (distance < minDistanceSquared)
 				{
-					distance = minDistanceSquared;
+					printf(", new min\n");
+					minDistanceSquared = distance;
 					closestMean = m;
+				} else {
+					printf("\n");
 				}
 			}
 			//Assign the point to the cluster with the closest mean
