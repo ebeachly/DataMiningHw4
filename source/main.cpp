@@ -93,6 +93,16 @@ public:
 		}
 		printf("\n");
 	}
+
+	double getWithinClusterSumOfSquaredErrors(std::vector< std::vector< double > >& data)
+	{
+		double sumOfSquaredErrors = 0.0;
+		for (int i = 0; i < instances.size(); ++i)
+		{
+			sumOfSquaredErrors += euclideanDistanceSquared(center, data[instances[i]]);
+		}
+		return sumOfSquaredErrors;
+	}
 };
 
 /**
@@ -268,15 +278,20 @@ int main( int argc, char* argv[] )
 	}*/
 
 	//Call k-means
+	double startTime = getCPUTime();
 	std::vector<Cluster> clusters = kMeans(dataSet, k, epsilon, numIterations);
+	double endTime = getCPUTime();
 
 	//Report information about the clusters
 	//std::vector<std::vector<double> > means;
-	printf("Final Results:\n");
+	printf("Final Results: Clustered in %f seconds.\n", endTime - startTime);
+	double totalSumOfSquaredErrors = 0.0;
 	for (int m = 0; m < k; ++m)
 	{
 		clusters[m].printClusterInfo(m);
+		totalSumOfSquaredErrors += clusters[m].getWithinClusterSumOfSquaredErrors(dataSet);
 	}
+	printf("Within Cluster Sum of Squared Errors: %f\n", totalSumOfSquaredErrors);
 
 	return 0;
 }
