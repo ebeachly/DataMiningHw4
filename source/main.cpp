@@ -27,21 +27,60 @@ double euclideanDistanceSquared(std::vector<double>& a, std::vector<double>& b)
 	}
 }
 
-std::vector<double> getClusterCenter(std::vector<std::vector<double> >& data, std::vector<int>& cluster)
-{
-	//Initialize a zero vector
-	std::vector<double> sum(data[0].size(), 0.0);
-	//For each instance in the cluster
-	for (int i = 0; i < cluster.size(); ++i)
+
+/*
+ * A class to represent a cluster
+ */
+class Cluster {
+public:
+	std::vector< int >  instances;
+	std::vector< double > center;
+
+	Cluster(){};
+
+	double updateCenter( std::vector< std::vector< double > >& data)
 	{
-		//For each attribute
-		for (int a = 0; a < sum.size(); ++a)
+		std::vector<double> oldCenter = center;
+		double movement = 0.0;
+		if (instances.size() > 0)
 		{
-			sum[a] += data[cluster[i]][a];
+			center = std::vector<double>(data[0].size(), 0.0);
+			//For each instance in the cluster
+			for (int i = 0; i < instances.size(); ++i)
+			{
+				//For each attribute
+				for (int a = 0; a < center.size(); ++a)
+				{
+					center [a] += data[instances[i]][a];
+				}
+			}
+			//Divide the sum by the number of instances
+			for (int a = 0; a < center.size(); ++a)
+			{
+				center[a] = center[a] / data.size();
+			}
 		}
+		if (oldCenter.size() == 0)
+		{
+			return 0.0;
+		}
+		return sqrt(euclideanDistanceSquared(center, oldCenter));
 	}
-	return sum;
-}
+
+	void printClusterInfo(int clusterNum)
+	{
+		printf("Cluster %d: %d instances, center at: ", clusterNum, (int)instances.size());
+		for (int a = 0; a < center.size(); ++a)
+		{
+			printf("%f", center[a]);
+			if (a < center.size() - 1)
+			{
+				printf(", ");
+			}
+		}
+		printf("\n");
+	}
+};
 
 /**
  * K-Means algorithm
@@ -50,24 +89,27 @@ std::vector<double> getClusterCenter(std::vector<std::vector<double> >& data, st
  * returns: an array of clusters. Each cluster is an array of indicies into the dataset.
  */
 
-std::vector<std::vector<int> > kMeans(std::vector<std::vector<double> >& data, int k, double epsilon, int numIterations)
+std::vector< Cluster > kMeans(std::vector<std::vector<double> >& data, int k, double epsilon, int numIterations)
 {
-	std::vector<std::vector<double> > means;
-	std::vector<std::vector<int> > clusters(k);
+	std::vector< Cluster > clusters(k);
 	//Select data points to be the starting means
+	printf("Initial conditions:\n");
 	for (int m = 0; m < k; ++m )
 	{
-		means.push_back(data[data.size() * m / k]);
+		clusters[m].instances.push_back((data.size() * m) / k);
+		clusters[m].updateCenter(data);
+		clusters[m].printClusterInfo(m);
 	}
 
 	//Begin iterations
 	int i;
 	for (i = 0; i < numIterations; ++i)
 	{
-		//Clear clusters
+		printf("Iteration %d:\n", i + 1);
+		//Clear which instances belong to which clusters
 		for (int m = 0; m < k; ++m)
 		{
-			clusters[m].clear();
+			clusters[m].instances.clear();
 		}
 
 		//Assign each point to a cluster
@@ -75,11 +117,11 @@ std::vector<std::vector<int> > kMeans(std::vector<std::vector<double> >& data, i
 		for (int p = 0; p < data.size(); ++p)
 		{
 			//Figure out which mean it's closer to
-			double minDistanceSquared = euclideanDistanceSquared(data[p], means[0]);
+			double minDistanceSquared = euclideanDistanceSquared(data[p], clusters[0].center);
 			int closestMean = 0;
 			for (int m = 1; m < k; ++m)
 			{
-				double distance = euclideanDistanceSquared(data[p], means[m]);
+				double distance = euclideanDistanceSquared(data[p], clusters[m].center);
 				if (distance < minDistanceSquared)
 				{
 					distance = minDistanceSquared;
@@ -87,24 +129,20 @@ std::vector<std::vector<int> > kMeans(std::vector<std::vector<double> >& data, i
 				}
 			}
 			//Assign the point to the cluster with the closest mean
-			clusters[closestMean].push_back(p);
+			clusters[closestMean].instances.push_back(p);
 		}
 
 		//Compute the new cluster centers
-		std::vector<std::vector<double> > newMeans;
+		double totalClusterMovement = 0.0;
 		for (int m = 0; m < k; ++m)
 		{
-			newMeans.push_back(getClusterCenter(data, clusters[m]));
+			totalClusterMovement += clusters[m].updateCenter(data);
+			clusters[m].printClusterInfo(m);
 		}
+		printf("Total movement: %f\n", totalClusterMovement);
 
-		//Compute total cluster center movement
-		double sum = 0.0;
-		for (int m = 0; m < k; ++m)
-		{
-			sum += sqrt(euclideanDistanceSquared(means[m],newMeans[m]));
-		}
-
-		if (sum <= epsilon)
+		//Check if total cluster movement is less than epsilon
+		if (totalClusterMovement <= epsilon)
 		{
 			printf("Terminated due to epsilon.\n");
 			break;
@@ -201,32 +239,24 @@ int main( int argc, char* argv[] )
 	}
 
 	//Print out the dataset for debugging
-	for ( int i = 0; i < dataSet.size(); ++i )
+	/*for ( int i = 0; i < dataSet.size(); ++i )
 	{
 		for (int a = 0; a < dataSet[i].size(); ++a )
 		{
 			printf("%f, ", dataSet[i][a]);
 		}
 		printf("\n");
-	}
+	}*/
 
 	//Call k-means
-	std::vector<std::vector<int> > clusters = kMeans(dataSet, k, epsilon, numIterations);
+	std::vector<Cluster> clusters = kMeans(dataSet, k, epsilon, numIterations);
 
 	//Report information about the clusters
-	std::vector<std::vector<double> > means;
+	//std::vector<std::vector<double> > means;
+	printf("Final Results:\n");
 	for (int m = 0; m < k; ++m)
 	{
-		//Report general information about the cluster
-		printf("Cluster %d: %d instances, center at: ", m, (int)clusters[m].size());
-		
-		//Print the cluster center
-		means.push_back(getClusterCenter(dataSet, clusters[m]));
-		for (int a = 0; a < dataSet[0].size(); ++a)
-		{
-			printf("%f, ", means[m][a]);
-		}
-		printf("\n");
+		clusters[m].printClusterInfo(m);
 	}
 
 	return 0;
