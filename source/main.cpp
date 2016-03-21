@@ -116,19 +116,19 @@ std::vector< Cluster > kMeans(std::vector<std::vector<double> >& data, int k, do
 {
 	std::vector< Cluster > clusters(k);
 	//Select data points to be the starting means
-	printf("Initial conditions:\n");
+	//printf("Initial conditions:\n");
 	for (int m = 0; m < k; ++m )
 	{
 		clusters[m].instances.push_back((data.size() * m) / k);
 		clusters[m].updateCenter(data);
-		clusters[m].printClusterInfo(m);
+		//clusters[m].printClusterInfo(m);
 	}
 
 	//Begin iterations
 	int i;
 	for (i = 0; i < numIterations; ++i)
 	{
-		printf("Iteration %d:\n", i + 1);
+		//printf("Iteration %d:\n", i + 1);
 		//Clear which instances belong to which clusters
 		for (int m = 0; m < k; ++m)
 		{
@@ -166,14 +166,14 @@ std::vector< Cluster > kMeans(std::vector<std::vector<double> >& data, int k, do
 		for (int m = 0; m < k; ++m)
 		{
 			totalClusterMovement += clusters[m].updateCenter(data);
-			clusters[m].printClusterInfo(m);
+			//clusters[m].printClusterInfo(m);
 		}
-		printf("Total movement: %f\n", totalClusterMovement);
+		//printf("Total movement: %f\n", totalClusterMovement);
 
 		//Check if total cluster movement is less than epsilon
 		if (totalClusterMovement <= epsilon)
 		{
-			printf("Terminated due to epsilon.\n");
+			//printf("Terminated due to epsilon.\n");
 			break;
 		}
 	}
@@ -189,11 +189,11 @@ std::vector< Cluster > kMeans(std::vector<std::vector<double> >& data, int k, do
 int main( int argc, char* argv[] )
 {
 	//Parse arguments and inputs
-	char defaultFileName[] = "../iris.csv";
+	char defaultFileName[] = "../waveform-5000-25%.csv";
 	char* fileName = defaultFileName;
 	int k = 3;
 	double epsilon = 0.0;
-	int numIterations = 10;
+	int numIterations = 1000;
 	
 	if (argc == 4)
 	{
@@ -282,16 +282,37 @@ int main( int argc, char* argv[] )
 	std::vector<Cluster> clusters = kMeans(dataSet, k, epsilon, numIterations);
 	double endTime = getCPUTime();
 
+	//Get the mean of the data set
+	std::vector<double> dataSetCenter;
+	if (dataSet.size() > 0)
+	{
+		dataSetCenter = std::vector<double>(dataSet[0].size(), 0.0);
+		//For each instance in the data set
+		for (int i = 0; i < dataSet.size(); ++i)
+		{
+			//For each attribute
+			for (int a = 0; a < dataSetCenter.size(); ++a)
+			{
+				dataSetCenter[a] += dataSet[i][a];
+			}
+		}
+		//Divide the sum by the number of instances
+		for (int a = 0; a < dataSetCenter.size(); ++a)
+		{
+			dataSetCenter[a] = dataSetCenter[a] / dataSet.size();
+		}
+	}
+
 	//Report information about the clusters
 	//std::vector<std::vector<double> > means;
 	printf("Final Results: Clustered in %f seconds.\n", endTime - startTime);
-	double totalSumOfSquaredErrors = 0.0;
+	double totalWithinClusterSumOfSquaredErrors = 0.0;
 	for (int m = 0; m < k; ++m)
 	{
 		clusters[m].printClusterInfo(m);
-		totalSumOfSquaredErrors += clusters[m].getWithinClusterSumOfSquaredErrors(dataSet);
+		totalWithinClusterSumOfSquaredErrors += clusters[m].getWithinClusterSumOfSquaredErrors(dataSet);
 	}
-	printf("Within Cluster Sum of Squared Errors: %f\n", totalSumOfSquaredErrors);
+	printf("Within Cluster Sum of Squared Errors: %f\n", totalWithinClusterSumOfSquaredErrors);
 
 	return 0;
 }
